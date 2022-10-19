@@ -1,0 +1,142 @@
+\documentclass[border=1pt, multi, tikz]{standalone}
+\usepackage{import}
+\subimport{../../layers/}{init}
+\usetikzlibrary{positioning}
+\usetikzlibrary{3d} %for including external image 
+
+\def\ConvColor{rgb:yellow,5;red,2.5;white,5}
+\def\ConcatColor{rgb:yellow,5;red,7;blue,5}
+\def\CBRColor{rgb:yellow,5;red,7;white,5}
+\def\ConvReluColor{rgb:yellow,5;red,5;white,5}
+\def\PoolColor{rgb:red,1;black,0.3}	
+\def\DcnvColor{rgb:blue,5;green,2.5;white,5}
+\def\SoftmaxColor{rgb:magenta,5;black,7}
+\def\SumColor{rgb:blue,5;green,15}
+
+\begin{document}
+\begin{tikzpicture}
+\tikzstyle{connection}=[ultra thick,every node/.style={sloped,allow upside down},draw=\edgecolor,opacity=0.7]
+\tikzstyle{arrow} = [thick,->,>=stealth, line width=1.5pt, draw=\edgecolor,opacity=0.7]
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Define Block size
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand{\h}{15} 
+\newcommand{\w}{3.}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Draw Layer Blocks
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\node (mk) at (-3,-0.,0) {\Huge$\mathbf{m}_k$};
+\node (grad) at (-3,-5.,0) {\Huge$\nabla J(\mathbf{m}_k)$};
+
+% conv1_A,conv1_B
+\pic[shift={(0,0,0)}] at (0,0,0) {RightBandedBox={name=cr1A,caption=,%
+        xlabel={{"32","32"}},fill=\ConvColor,bandfill=\ConvReluColor,%
+        height=\h,width={\w,\w},depth=\h}};
+\pic[shift={(0,-5,0)}] at (0,0,0) {RightBandedBox={name=cr1B,caption=,%
+		xlabel={{"32","32"}},fill=\ConvColor,bandfill=\ConvReluColor,%
+		height=\h,width={\w,\w},depth=\h}};
+
+% Concatenation	
+\pic[shift={(2,0,0)}] at (cr1B-east) {Ball={name=concat123,fill=\ConcatColor,radius=2.5,logo=$||$}};    
+%\pic[shift={(1.5,-5,0)}] at (cr1A-east) {Box={name=concat1,%
+%		caption=,fill=\ConcatColor,%
+%		height=\h,width=\w,depth=\h}};
+%\pic[shift={(0,0,0)}] at (concat1-east) {Box={name=concat2,%
+%			fill=\ConcatColor,%
+%			height=\h,width=\w,depth=\h}};
+%\pic[shift={(0,0,0)}] at (concat2-east) {Box={name=concat3,%
+%		fill=\ConcatColor,%
+%		height=\h,width=\w,depth=\h}};
+% BN layer
+\pic[shift={(1.5,0,0)}] at (concat123-east) {Box={name=bn,%
+		fill=\DcnvColor, caption=,%
+		height=\h,width=\w,depth=\h}};
+% conv1_C	
+\pic[shift={(0,0,0)}] at (bn-east) {RightBandedBox={name=cr1C,%
+		xlabel={"64","0"},fill=\ConvColor,bandfill=\ConvReluColor,%
+		height=\h,width=10,depth=\h}};	
+\pic[shift={(0,0,0)}] at (cr1C-east) {RightBandedBox={name=cr2C,%
+		xlabel={"32","0"},fill=\ConvColor,bandfill=\ConvReluColor,%
+		height=\h,width=\w,depth=\h}};	
+\pic[shift={(1.5,0,0)}] at (cr2C-east) {RightBandedBox={name=cr3C,%
+		xlabel={"16","0"},caption=,fill=\CBRColor,bandfill=\CBRColor,%
+		height=\h,width={4},depth=\h}};	
+\pic[shift={(1.5,0,0)}] at (cr3C-east) {Box={name=cr4C,%
+		xlabel={"1","0"},fill=\ConvColor,%
+		height=\h,width={2},depth=\h}};
+% Skip connection	
+\pic[shift={(1.5,0,0)}] at (cr4C-east) {Ball={name=elt2,%
+		fill=\ConcatColor,%
+		radius=2.5,logo=$+$}};
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   
+%%% Output
+%%%%%%%%%%    
+\node (output) [shift={(1.8,0,0)}] at (elt2-east) {\Huge$\mathbf{m}_{k+1}$};
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Legend
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\pic[shift={(-3,-3.5,0)}] at (cr2C-south)  {RightBandedBox={name=legend1,caption=,%
+		fill=\ConvColor,bandfill=\ConvReluColor,%
+		height=6,width=3,depth=0, ylabel=\LARGE Conv+ReLU}};
+\pic[shift={(-0,-1.,0)}] at (legend1-south) {Ball={name=legend2,%
+		caption=,fill=\ConcatColor,%
+		radius=2.5,logo=$||$, ylabel = \LARGE Concatenation}};
+\pic[shift={(5.5,0,0)}] at (legend1-east) {Box={name=legend3,%
+			fill=\DcnvColor, caption=,%
+			height=6,width=3,depth=0,ylabel=\LARGE BN}};
+\pic[shift={(-0.3,-1,0)}] at (legend3-south) {RightBandedBox={name=Conv+BN+ReLU,%
+		caption=,fill=\CBRColor,bandfill=\CBRColor,%
+		height=6,width=3,depth=0,ylabel=\LARGE Conv+BN+ReLU}};	
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Draw connections
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Input coonection
+\draw [arrow] (mk) -- (0,-0.,0); 
+\draw [arrow] (grad) -- (0,-5,0);
+
+% Skip connection
+\draw [arrow] (mk) |- (-3, 2.5, 0)  -|  (elt2-north) ;
+
+% Concat
+\draw [arrow] (cr1A-east) -| (concat123-north);
+\draw [arrow] (cr1B-east) -- (concat123-west);
+
+%BN
+\draw [arrow] (concat123-east) -- (bn-west);
+
+%CONVRELUBN
+\draw [arrow] (cr2C-east) -- (cr3C-west);
+
+% SINGLE CHANNEL
+\draw [arrow] (cr3C-east) -- (cr4C-west);
+\draw [arrow] (cr4C-east) -- (elt2-west);
+\draw [arrow] (cr3C-east) -- (cr4C-west);
+\draw [arrow] (elt2-east) -- (output);
+
+%\draw [connection] (grad) -- node {\midarrow} (0,-5.5,0);
+%\draw [connection] (omega) -- node {\midarrow} (0,-10.5,0);
+
+%\draw [connection]  (cr1A-east)    -- node {\midarrow} (elt2-north);
+%\draw [connection]  (p2-east)    -- node {\midarrow} (cr3-west);
+%\draw [connection]  (p3-east)    -- node {\midarrow} (cr4-west);
+%\draw [connection]  (p4-east)    -- node {\midarrow} (cr5-west);
+%\draw [connection]  (p5-east)    -- node {\midarrow} (cr6_7-west);
+%\draw [connection]  (cr6_7-east)   -- node {\midarrow} (score32-west);
+%\draw [connection]  (score32-east) -- node {\midarrow} (d32-west);
+%(cr1A-east) -- (cr4C-west) coordinate[pos=0.25] (between4_5) ;
+%\draw [connection]  (between4_5)    -- node {\midarrow} (score16-west-|between4_5) -- node {\midarrow} (score16-west);
+%\draw [connection]  (d32-east) -- node {\midarrow} (elt1-west);
+%\draw [connection]  (score16-east) -- node {\midarrow} (score16-east -| elt1-south) -- node {\midarrow} (elt1-south);
+%\draw [connection]  (elt1-east) -- node {\midarrow} (d16-west);
+%
+%\path (p3-east) -- (cr4-west) coordinate[pos=0.25] (between3_4) ;
+%\draw [connection]  (between3_4) -- node {\midarrow} (score8-west-|between3_4) -- node {\midarrow} (score8-west);
+%\draw [connection]  (d16-east) -- node {\midarrow} (elt2-west);
+%\draw [connection]  (score8-east) -- node {\midarrow} (score8-east -| elt2-south)-- node {\midarrow} (elt2-south);
+%\draw [connection]  (elt2-east) -- node {\midarrow} (d8-west);
+%\draw [connection] (d8-east) -- node{\midarrow} (softmax-west);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\end{tikzpicture}
+\end{document}\grid

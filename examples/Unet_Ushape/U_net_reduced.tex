@@ -1,0 +1,126 @@
+\documentclass[border=8pt, multi, tikz]{standalone}
+%\usepackage{blocks}
+\usepackage{import}
+\subimport{../../layers/}{init}
+\usetikzlibrary{positioning}
+
+\def\ConvColor{rgb:yellow,5;red,2.5;white,5}
+\def\ConvReluColor{rgb:yellow,5;red,5;white,5}
+%\def\PoolColor{rgb:red,1;black,0.3}
+\def\UnpoolColor{rgb:blue,2;green,1;black,0.3}
+\def\ConcatColor{rgb:yellow,5;red,7;blue,5}
+\def\PoolColor{rgb:blue,5;red,2.5;white,5}
+\def\FcReluColor{rgb:blue,5;red,5;white,4}
+\def\SoftmaxColor{rgb:magenta,5;black,7}
+\def\TransposeColor{rgb:red,1;black,0.3}
+
+
+\newcommand{\copymidarrow}{\tikz \draw[-Stealth,line width =0.8mm,draw={rgb:blue,4;red,1;green,1;black,3}] (-0.3,0) -- ++(0.3,0);}
+
+\begin{document}
+\begin{tikzpicture}
+\tikzstyle{connection}=[ultra thick,every node/.style={sloped,allow upside down},draw=\edgecolor,opacity=0.7]
+\tikzstyle{copyconnection}=[ultra thick,every node/.style={sloped,allow upside down},draw={rgb:blue,4;red,1;green,1;black,3},opacity=0.7]
+\tikzstyle{arrow} = [thick,->,>=stealth, line width=1.5pt, draw=\edgecolor,opacity=0.7]
+\tikzstyle{arrow_red} = [thick,->,>=stealth, line width=1.5pt, draw=\TransposeColor,opacity=0.7]
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Define Blocksize
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand{\h}{15} 
+\newcommand{\w}{3}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Draw Encoder
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\node (ltd) at (-2,-0.,0) {\Huge$\mathbf{L}^T\mathbf{d}$};
+% conv1_1,conv1_2
+\pic[shift={(0,0,0)}] at (0,0,0) {RightBandedBox={name=cr1,%
+        xlabel={{"32","32"}},caption=I,fill=\ConvColor,bandfill=\ConvReluColor,%
+        height=\h,width={\w,\w},depth=\h}};
+%pool1
+\pic[shift={(1.0,-3.5,0)}] at (cr1-east) {Box={name=p1,%
+        fill=\PoolColor,opacity=0.6,height=\h/2,width=1,depth=\h/2}};
+%%%%%%%%%%
+% conv2_1,conv2_2
+\pic[shift={(0,0,0)}] at (p1-east) {RightBandedBox={name=cr2,%
+        xlabel={{"64","64"}},caption=I/2,fill=\ConvColor,bandfill=\ConvReluColor,%
+        height=\h/2,width={\w*2,\w*2},depth=\h/2}};
+%pool2
+\pic[shift={(1,-2.,0)}] at (cr2-east) {Box={name=p2,%
+        fill=\PoolColor,opacity=0.6,height=\h/4,width=1,depth=\h/4}};
+%%%%%%%%%%
+% conv3_1,conv3_2
+\pic[shift={(0,0,0)}] at (p2-east) {RightBandedBox={name=cr3,%
+        xlabel={{"128","128"}},caption=I/4,fill=\ConvColor,bandfill=\ConvReluColor,%
+        height=\h/4,width={\w*3,\w*3},depth=\h/4}};
+%%%%%%%%%%
+% transposed conv 1
+\pic[shift={(-1,2,0)}] at (cr3-east) {Ball={name=cat23,fill=\ConcatColor,radius=2.5,logo=$||$}};    
+
+% conv4_1,conv4_2    
+\pic[shift={(1,2,0)}] at (cr3-east) {RightBandedBox={name=cr4,%
+		xlabel={{"64","64"}},caption=I/2,fill=\ConvColor,bandfill=\ConvReluColor,%
+		height=\h/2,width={\w*2,\w*2},depth=\h/2}};
+%%%%%%%%%%
+% transposed conv 2
+\pic[shift={(0.5,2.75,0)}] at (cr4-north) {Ball={name=cat12,fill=\ConcatColor,radius=2.5,logo=$||$}};    
+% conv5_1,conv5_2    
+\pic[shift={(1.0,3.5,0)}] at (cr4-east) {RightBandedBox={name=cr5,%
+		xlabel={{"32","32"}},caption=I,fill=\ConvColor,bandfill=\ConvReluColor,%
+		height=\h,width={\w,\w},depth=\h}};
+%%%%%%%%%%
+% conv6_1
+\pic[shift={(1.3,0,0)}] at (cr5-east) {Box={name=cr6,%
+		xlabel={{"1","dummy"}},fill=\ConvColor,%
+		height=\h,width={1},depth=\h}};
+% Skip connection	
+\pic[shift={(1.5,0,0)}] at (cr6-east) {Ball={name=elt2,%
+		fill=\ConcatColor,%
+		radius=2.5,logo=$+$}};
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   
+%%% Output
+%%%%%%%%%%   
+\node (output) [shift={(1.5,0,0)}] at (elt2-east) {\Huge$\mathbf{m}$};
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Draw connections
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Input coonection
+\draw [arrow] (ltd) -- (0,-0.,0); 
+
+% Skip connections
+\draw [arrow] (ltd) |- (-1.5, 2.5, 0)  -|  (elt2-north) ;
+%
+
+% The rest
+\draw [arrow] (cr1-east) |- (p1-east);
+\draw [arrow] (cr1-east) -- (cat12-west);
+\draw [arrow] (cr2-east) |- (p2-east);
+\draw [arrow] (cr2-east) -- (cat23-west);
+
+\coordinate (centered1) at ([shift={(0.8,0,0)}]cr3-north);
+\coordinate (centered2) at ([shift={(.5,0,0)}]cr4-north);
+\draw [arrow_red] (centered1) -- (cat23-south);
+\draw [arrow_red] (centered2) -- (cat12-south);
+
+\draw [arrow] (cat12-east) -- ([shift={(0,0.0,0)}]cr5-west) ;
+\draw [arrow] (cat23-east) -- (cr4-west);
+
+\draw [arrow] (cr5-east) -- (cr6-west);
+\draw [arrow] (cr6-east) -- (elt2-west);
+\draw [arrow] (elt2-east) -- (output);
+
+
+% LEGEND
+\pic[shift={(3.2,-1.5,0)}] at (cr6-south)  {RightBandedBox={name=legend1,caption=,%
+		fill=\ConvColor,bandfill=\ConvReluColor,%
+		height=6,width=3,depth=0, ylabel=\LARGE Conv+ReLU}};
+\pic[shift={(0,-.8,0)}] at (legend1-south) {Box={name=legend2,%
+		fill=\PoolColor,opacity=0.6,height=\h/4,width=1,depth=0, ylabel=\LARGE Max-pooling}};
+\pic[shift={(-0,-0.8,0)}] at (legend2-south) {Ball={name=legend3,%
+		caption=,fill=\ConcatColor,%
+		radius=2.5,logo=$||$, ylabel = \LARGE Concatenation}};
+\node (Transpose) [shift={(-2.4,-0.7,0)}] at (legend3-south) {\LARGE Transposed Conv}; 
+\draw [arrow_red] ([shift={(0,-0.9,0)}]legend3-south) -- ([shift={(0,-.25,0)}]legend3-south);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\end{tikzpicture}
+\end{document}

@@ -20,12 +20,18 @@
 \path (\name-south) + (0,-20pt) coordinate (caption-node) 
 edge ["\textcolor{black}{\bf \caption}"'] (caption-node); %Ball caption
 
+% ylabel
+\path (\name-west) + (-55pt,0) coordinate (ylabel-node) 
+edge ["\textcolor{black}{\ylabel}"'] (ylabel-node); %Ball caption
+
+
 },
 /sphere/.search also={/tikz},
 /sphere/.cd,
 radius/.store       in=\radius,
 scale/.store        in=\scale,
 caption/.store      in=\caption,
+ylabel/.store      in=\ylabel,
 name/.store         in=\name,
 fill/.store         in=\fill,
 logo/.store         in=\logo,
@@ -36,5 +42,6 @@ opacity=0.10,
 scale=0.2,
 radius=0.5,
 caption=,
+ylabel=,
 name=,
 }

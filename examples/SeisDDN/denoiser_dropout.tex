@@ -1,0 +1,82 @@
+\documentclass[border=15pt, multi, tikz]{standalone}
+\usepackage{import}
+\subimport{../../layers/}{init}
+\usetikzlibrary{positioning}
+
+\def\ConvColor{rgb:yellow,5;red,2.5;white,5}
+\def\ConvReluColor{rgb:yellow,5;red,5;white,5}
+\def\PoolColor{rgb:red,1;black,0.3}
+\def\DcnvColor{rgb:blue,5;green,2.5;white,5}
+\def\SoftmaxColor{rgb:magenta,5;black,7}
+
+\begin{document}
+
+\begin{tikzpicture}
+\tikzstyle{connection}=[ultra thick,every node/.style={sloped,allow upside down},draw=\edgecolor,opacity=0.7]
+
+\newcommand{\h}{10} 
+\newcommand{\w}{3}
+\newcommand{\shiftx}{1}
+%%%%%
+% Input
+\node (ltd) at (-2,-0.,0) {\Huge$\mathbf{F}_{\theta_1}=$};
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Draw Layer Blocks
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% conv1
+\pic[shift={(0,0,0)}] at (0,0,0) {RightBandedBox={name=cr1,caption=I,%
+        xlabel={{"64","64"}},fill=\ConvColor,bandfill=\ConvReluColor,%
+        height=\h,width=\w,depth=\h}};
+% Dropout1
+\pic[shift={(0,0,0)}] at (cr1-east) {Box={name=do1,%
+		fill=\PoolColor,opacity=0.6,height=\h,width=\w/2,depth=\h}};
+%%%%%%%%%%
+% conv2
+\pic[shift={(\shiftx,0,0)}] at (do1-east) {RightBandedBox={name=cr2,caption=I,%
+        xlabel={{"64","64"}},fill=\ConvColor,bandfill=\ConvReluColor,%
+        height=\h,width=\w,depth=\h}};
+% Dropout2
+\pic[shift={(0,0,0)}] at (cr2-east) {Box={name=do2,%
+		fill=\PoolColor,opacity=0.6,height=\h,width=\w/2,depth=\h}};
+    
+%%%%%%%%%%
+% conv3
+\pic[shift={(\shiftx,0,0)}] at (do2-east) {RightBandedBox={name=cr3,caption=I,%
+		xlabel={{"64","64"}},fill=\ConvColor,bandfill=\ConvReluColor,%
+		height=\h,width=\w,depth=\h}};
+% Dropout3
+\pic[shift={(0,0,0)}] at (cr3-east) {Box={name=do3,%
+		fill=\PoolColor,opacity=0.6,height=\h,width=\w/2,depth=\h}};
+
+%%%%%%%%%%
+% conv4
+\pic[shift={(\shiftx,0,0)}] at (do3-east) {RightBandedBox={name=cr4,caption=I,%
+		xlabel={{"64","64"}},fill=\ConvColor,bandfill=\ConvReluColor,%
+		height=\h,width=\w,depth=\h}};
+% Dropout 4
+\pic[shift={(0,0,0)}] at (cr4-east) {Box={name=do4,%
+			fill=\PoolColor,opacity=0.6,height=\h,width=\w/2,depth=\h}};
+	
+	
+%%%%%%%%%%
+% output
+\pic[shift={(\shiftx,0,0)}] at (do4-east) {Box={name=cr5,caption=Output,%
+		fill=\SoftmaxColor,%
+		height=\h,width=1,depth=\h}};
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Draw connections
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\draw [connection]  (cr1-east)    -- node {\midarrow} (cr2-west);
+\draw [connection]  (cr2-east)    -- node {\midarrow} (cr3-west);
+\draw [connection]  (cr3-east)    -- node {\midarrow} (cr4-west);
+\draw [connection]  (cr4-east)    -- node {\midarrow} (cr5-west);
+
+% LEGEND
+\pic[shift={(6	,0,0)}] at (cr5-east)  {RightBandedBox={name=legend1,caption=,%
+		fill=\ConvColor,bandfill=\ConvReluColor,%
+		height=6,width=3,depth=0, ylabel=\large 2DConv+BN+ReLU}};
+\pic[shift={(0,-.8,0)}] at (legend1-south) {Box={name=legend2,%
+		fill=\PoolColor,opacity=0.6,height=\h/4,width=1,depth=0, ylabel=\large Dropout2D}};
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\end{tikzpicture}
+\end{document}\grid
