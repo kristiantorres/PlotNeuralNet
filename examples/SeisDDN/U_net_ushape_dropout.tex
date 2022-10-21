@@ -6,7 +6,8 @@
 
 \def\ConvColor{rgb:yellow,5;red,2.5;white,5}
 \def\ConvReluColor{rgb:yellow,5;red,5;white,5}
-\def\PoolColor{rgb:red,1;black,0.3}
+\def\DropoutColor{rgb:red,1;black,0.3}
+\def\PoolColor{rgb:black,0.3}
 \def\UnpoolColor{rgb:blue,2;green,1;black,0.3}
 \def\ConcatColor{rgb:blue,5;red,2.5;white,5}
 \def\FcReluColor{rgb:blue,5;red,5;white,4}
@@ -22,18 +23,18 @@
 
 % Define block size
 \newcommand{\h}{10} 
-\newcommand{\w}{2}
+\newcommand{\w}{1.5}
 \newcommand{\shiftx}{.5}
 \newcommand{\shiftz}{-5}
 %%%%%
 % Input
-\node (ltd) at (-2,-0.,0) {\Huge$\mathbf{N}_{\theta_2}=$};
+\node (ltd) at (-1.8,-0.,0) {\Huge$\mathbf{N}_{\theta_2}=$};
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Draw Encoder
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % conv1_1,conv1_2
 \pic[shift={(0,0,0)}] at (0,0,0) {RightBandedBox={name=cr1,%
-        xlabel={{"32","32"}},caption=I,fill=\ConvColor,bandfill=\ConvReluColor,%
+        xlabel={{"32"," ~~32"}},caption=I,fill=\ConvColor,bandfill=\ConvReluColor,%
         height=\h,width={\w,\w},depth=\h}};
 %pool1
 \pic[shift={(\shiftx,\shiftz/2,0)}] at (cr1-east) {Box={name=p1,%
@@ -51,6 +52,9 @@
 \pic[shift={(0,0,0)}] at (p2-east) {RightBandedBox={name=cr3,%
         xlabel={{"128","128"}},caption=I/4,fill=\ConvColor,bandfill=\ConvReluColor,%
         height=\h/3,width={\w*3,\w*3},depth=\h/3}};
+%%%Dropout
+\pic[shift={(0,0,0)}] at (cr3-east) {Box={name=do3,%
+		fill=\DropoutColor,opacity=0.6,height=\h/3,width=1,depth=\h/3}};
 %%pool3
 \pic[shift={(\shiftx,\shiftz/4,0)}] at (cr3-east) {Box={name=p3,%
         fill=\PoolColor,opacity=0.6,height=\h/4,width=1,depth=\h/4}};
@@ -59,6 +63,10 @@
 \pic[shift={(0,0,0)}] at (p3-east) {RightBandedBox={name=cr4,%
         xlabel={{"512","512"}},caption=I/8,fill=\ConvColor,bandfill=\ConvReluColor,%
         height=\h/4,width={\w*4,\w*4},depth=\h/4}};
+%%%Dropout
+\pic[shift={(0,0,0)}] at (cr4-east) {Box={name=do4,%
+		fill=\DropoutColor,opacity=0.6,height=\h/4,width=1,depth=\h/4}};
+
 %%pool4
 \pic[shift={(\shiftx,\shiftz/5,0)}] at (cr4-east) {Box={name=p4,%
         fill=\PoolColor,opacity=0.6,height=\h/5,width=1,depth=\h/5}};
@@ -68,12 +76,15 @@
 \pic[shift={(0,0,0)}] at (p4-east) {RightBandedBox={name=cr5,caption=I/16,%
         xlabel={{"1024","1024"}},fill=\ConvColor,bandfill=\ConvReluColor,%
         height=\h/5,width={\w*5,\w*5},depth=\h/5}};
+%%%Dropout
+\pic[shift={(0,0,0)}] at (cr5-east) {Box={name=do5,%
+		fill=\DropoutColor,opacity=0.6,height=\h/5,width=1,depth=\h/5}};
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Draw Decoder 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% unpool4, 
-\pic[shift={(0,0,0)}] at (cr5-east) {Box={name=up4,%
-        fill=\UnpoolColor,opacity=0.6,height=\h/4,width=1,depth=\h/4}};
+\pic[shift={(0,0,0)}] at (do5-east) {Box={name=up4,%
+        fill=\PoolColor,opacity=0.6,height=\h/4,width=1,depth=\h/4}};
 \pic[shift={(0,0,0)}] at (up4-east) {RightBandedBox={name=ucr4,%
         xlabel={{"512","dummy"}},caption=I/8,fill=\ConvColor,bandfill=\ConvReluColor,%
         height=\h/4,width=\w*4,depth=\h/4}};
@@ -81,10 +92,13 @@
 \pic[shift={(\shiftx,0,0)}] at (cat4-east) {RightBandedBox={name=ucr4a,%
         xlabel={{"512","512"}},caption=I/8,fill=\ConvColor,bandfill=\ConvReluColor,%
         height=\h/4,width={\w*4,\w*4},depth=\h/4}};
+% Dropout
+\pic[shift={(0,0,0)}] at (ucr4a-east) {Box={name=do6,%
+		fill=\DropoutColor,opacity=0.6,height=\h/4,width=1,depth=\h/4}};        
 %%%%%%%%%%
 %% unpool3, 
-\pic[shift={(0,0,0)}] at (ucr4a-east) {Box={name=up3,%
-        fill=\UnpoolColor,opacity=0.6,height=\h/3,width=1,depth=\h/3}};
+\pic[shift={(0,0,0)}] at (do6-east) {Box={name=up3,%
+        fill=\PoolColor,opacity=0.6,height=\h/3,width=1,depth=\h/3}};
 \pic[shift={(0,0,0)}] at (up3-east) {RightBandedBox={name=ucr3,%
         xlabel={{"256","dummy"}},caption=I/4,fill=\ConvColor,bandfill=\ConvReluColor,%
         height=\h/3,width=\w*3,depth=\h/3}};
@@ -92,10 +106,13 @@
 \pic[shift={(\shiftx,0,0)}] at (cat3-east) {RightBandedBox={name=ucr3a,%
         xlabel={{"256","256"}},caption=I/4,fill=\ConvColor,bandfill=\ConvReluColor,%
         height=\h/3,width={\w*3,\w*3},depth=\h/3}};
+% Dropout
+\pic[shift={(0,0,0)}] at (ucr3a-east) {Box={name=do7,%
+		fill=\DropoutColor,opacity=0.6,height=\h/3,width=1,depth=\h/3}};    
 %%%%%%%%%%
 %% unpool2, 
-\pic[shift={(0,0,0)}] at (ucr3a-east) {Box={name=up2,%
-        fill=\UnpoolColor,opacity=0.6,height=\h/2,width=1,depth=\h/2}};
+\pic[shift={(0,0,0)}] at (do7-east) {Box={name=up2,%
+        fill=\PoolColor,opacity=0.6,height=\h/2,width=1,depth=\h/2}};
 \pic[shift={(0,0,0)}] at (up2-east) {RightBandedBox={name=ucr2,%
         xlabel={{"128","dummy"}},caption=I/2,fill=\ConvColor,bandfill=\ConvReluColor,%
         height=\h/2,width=\w*2,depth=\h/2}};
@@ -106,13 +123,13 @@
 %%%%%%%%%%
 %% unpool1, 
 \pic[shift={(0,0,0)}] at (ucr2a-east) {Box={name=up1,%
-        fill=\UnpoolColor,opacity=0.6,height=\h,width=1,depth=\h}};
+        fill=\PoolColor,opacity=0.6,height=\h,width=1,depth=\h}};
 \pic[shift={(0,0,0)}] at (up1-east) {RightBandedBox={name=ucr1,%
         xlabel={{"64","dummy"}},caption=I,fill=\ConvColor,bandfill=\ConvReluColor,%
         height=\h,width=\w,depth=\h}};
 \pic[shift={(0,-\shiftz/2,0)}] at (ucr1-anchor) {Ball={name=cat1,fill=\ConcatColor,radius=2.5,logo=$||$}};
 \pic[shift={(\shiftx,0,0)}] at (cat1-east) {RightBandedBox={name=ucr1a,%
-        xlabel={{"64","64"}},caption=I,fill=\ConvColor,bandfill=\ConvReluColor,%
+        xlabel={{"64","~~64"}},caption=I,fill=\ConvColor,bandfill=\ConvReluColor,%
         height=\h,width={\w,\w},depth=\h}};
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Classifier 
@@ -155,16 +172,16 @@
 \draw [copyconnection]  (ucr1-north)  -- node {\copymidarrow} (cat1-south);
 
 % LEGEND
-\pic[shift={(4.2,-1.,0)}] at (ucr1-south)  {Box={name=legend1,%
-		fill=\PoolColor,opacity=0.6,height=\h/4,width=1,depth=0, ylabel=\large Max-pooling}};
-\pic[shift={(0,-.8,0)}] at (legend1-south) {RightBandedBox={name=legend2,caption=,%
+\pic[shift={(2,-4.8,0)}] at (cr3-south)  {Box={name=legend1,%
+		fill=\PoolColor,opacity=0.6,height=6,width=3,depth=0, ylabel=\large Max-pooling/Upsampling}};
+\pic[shift={(6, 0,0)}] at (legend1-west) {RightBandedBox={name=legend2,caption=,%
 		fill=\ConvColor,bandfill=\ConvReluColor,%
-		height=6,width=3,depth=0, ylabel=\large 2DConv+ReLU+Dropout}};
-\pic[shift={(-0,-0.8,0)}] at (legend2-south) {Ball={name=legend3,%
+		height=6,width=3,depth=0, ylabel=\large 2DConv+BN+ReLU}};
+\pic[shift={(5.5,0,0)}] at (legend2-west) {Ball={name=legend3,%
 		caption=,fill=\ConcatColor,%
 		radius=2.5,logo=$||$, ylabel = \large Concatenation}};
-\pic[shift={(-0,-0.8,0)}] at (legend3-south) {Box={name=legend4,%
-			caption=,fill=\UnpoolColor, opacity=0.6,height=\h/4,width=1,depth=0, ylabel = \large Upsampling\\}};		
+\pic[shift={(5,0,0)}] at (legend3-west) {Box={name=legend4,%
+			caption=,fill=\DropoutColor, opacity=0.6,height=6,width=3,depth=0, ylabel = \large Droput2D\\}};		
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \end{tikzpicture}
 \end{document}
